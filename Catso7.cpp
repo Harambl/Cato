@@ -1,100 +1,92 @@
 #include <iostream>
-#include <fstream>
 #include <vector>
-#include <algorithm>
-#include <climits>
-#include <map>
 #include <cmath>
+#include <iomanip>
+#include <algorithm>
+#include <fstream>
 
-using std::min;
 using std::vector;
-using std::max;
-using std::pair;
-using std::string;
-using std::map;
-using std::cin;
-using std::cout;
+using std::min;
 using std::ifstream;
 using std::ofstream;
 
-map <string, pair<int, int>> buttons{ {"1", {1, 1}},  {"2", {1, 2}}, {"3", {1, 3}},
-									  {"4", {2, 1}},  {"5", {2, 2}}, {"6", {2, 3}},
-									  {"7", {3, 1}},  {"8", {3, 2}}, {"9", {3, 3}},
-												      {"0", {4, 2}} };
+const double INF = 1e20;
 
 int main() {
+    
+    ifstream in("input.txt");
+    ofstream out("output.txt");
 
-	ifstream in("input.txt");
-	ofstream out("output.txt");
+    int N;
+    in >> N;
+    vector<int> a(N);
+    for (int i = 0; i < N; ++i) {
+        in >> a[i];
+    }
 
-	int n;
-	in >> n;
+    // Координаты клавиш (строка, столбец)
+    vector<int> row(10), col(10);
+    for (int d = 1; d <= 9; ++d) {
+        row[d] = (d - 1) / 3 + 1; // строки от 1 до 3
+        col[d] = (d - 1) % 3 + 1; // столбцы от 1 до 3
+    }
+    row[0] = 4;
+    col[0] = 2;
 
-	double count = 0;
+    // Предвычисление расстояний между всеми парами клавиш
+    vector<vector<double>> dist(10, vector<double>(10));
+    for (int i = 0; i < 10; ++i) {
+        for (int j = 0; j < 10; ++j) {
+            double dx = row[i] - row[j];
+            double dy = col[i] - col[j];
+            dist[i][j] = sqrt(dx * dx + dy * dy);
+        }
+    }
 
-	string lefthand = "4";
-	string righthand = "6";
+    // dp[L][R] - минимальное время, когда левый палец на L, правый на R
+    vector<vector<double>> dp(10, vector<double>(10, INF));
+    dp[4][6] = 0.0; // начальное положение
 
-	vector<string> clicked;
-	for (int i = 0; i < n; ++i) {
-		string p = "";
-		in >> p;
-		clicked.push_back(p);
-	}
+    for (int i = 0; i < N; ++i) {
+        int target = a[i];
+        vector<vector<double>> new_dp(10, vector<double>(10, INF));
+        for (int L = 0; L < 10; ++L) {
+            for (int R = 0; R < 10; ++R) {
+                if (dp[L][R] >= INF) continue;
 
-	for (int j = 0; j < n; ++j) {
-		if (lefthand == clicked[j] || righthand == clicked[j]) {}
-		else {
-			int x = buttons[clicked[j]].first;
-			int y = buttons[clicked[j]].second;
-			int a = buttons[lefthand].first;
-			int b = buttons[lefthand].second;
-			int t = buttons[righthand].first;
-			int h = buttons[righthand].second;
+                // Нажимаем target левым пальцем
+                if (col[target] <= col[R]) {
+                    double new_time = dp[L][R] + dist[L][target];
+                    if (new_time < new_dp[target][R]) {
+                        new_dp[target][R] = new_time;
+                    }
+                }
 
-			if (!(h - y < 0) || !(b - y > 0)) {
-				double fromleft = sqrt(pow((x - a), 2) + pow((y - b), 2));
-				double fromright = sqrt(pow((x - t), 2) + pow((y - h), 2));
-				cout << fromleft << '\n' << fromright << '\n';
-				if (fromright > fromleft) {
-					count += fromleft;
-					lefthand = clicked[j];
-					cout << count << ' ' << "HUJ\n";
-				}
-				else if (fromright < fromleft) {
-					count += fromright;
-					righthand = clicked[j];
-					cout << count << ' ' << "DFGFY\n";
-				}
-				else {
-					count += fromright;
-					righthand = clicked[j];
-					cout << count << ' ' << "DFppppFY\n";
-				}
-			}
-			else {
-				cout << "Here" << '\n';
-				if (h - y < 0) {
-					double fromright = sqrt(pow((x - t), 2) + pow((y - h), 2));
-					count += fromright;
-					righthand = clicked[j];
-					cout << fromright << '\n' << count << ' ' << "ooioioi\n";
-				}
-				else if (b - y > 0) {
-					double fromleft = sqrt(pow((x - a), 2) + pow((y - b), 2));
-					count += fromleft;
-					lefthand = clicked[j];
-					cout << fromleft << '\n' << count << ' ' << "j;;klkl\n";
-				}
-			}
-		}
-		
-	}
+                // Нажимаем target правым пальцем
+                if (col[L] <= col[target]) {
+                    double new_time = dp[L][R] + dist[R][target];
+                    if (new_time < new_dp[L][target]) {
+                        new_dp[L][target] = new_time;
+                    }
+                }
+            }
+        }
+        dp = move(new_dp);
+ 
+    }
 
-	out << count;
+    // Находим минимальное время среди всех конечных состояний
+    double ans = INF;
+    for (int L = 0; L < 10; ++L) {
+        for (int R = 0; R < 10; ++R) {
+            ans = min(ans, dp[L][R]);
+        }
+    }
 
-	in.close();
-	out.close();
+    out << ans;
 
-   return 0;
+    in.close();
+    out.close();
+
+    return 0;
 }
