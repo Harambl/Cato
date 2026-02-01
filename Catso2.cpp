@@ -2,13 +2,13 @@
 #include <cstring>
 using namespace std;
 
-long long memo[51][21][21];
+long long dp[51][21][21];
 
 long long solve(int pos, int a, int b, int n) {
     if (a == 0 && b == 0) return 1;
     if (pos >= n) return 0;
 
-    if (memo[pos][a][b] != -1) return memo[pos][a][b];
+    if (dp[pos][a][b] != -1) return dp[pos][a][b];
 
     long long res = 0;
 
@@ -36,14 +36,14 @@ long long solve(int pos, int a, int b, int n) {
         }
     }
 
-    return memo[pos][a][b] = res;
+    return dp[pos][a][b] = res;
 }
 
 int main() {
     int n, a, b;
     cin >> n >> a >> b;
 
-    memset(memo, -1, sizeof(memo));
+    memset(dp, -1, sizeof(dp));
     cout << solve(0, a, b, n) << endl;
 
     return 0;
